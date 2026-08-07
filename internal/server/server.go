@@ -4,16 +4,18 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/logan-hendricks-pwc/loan-processor/internal/loan"
 )
 
 // Server holds the dependencies shared by the HTTP handlers.
 // Add stores, clients, and config here as the app grows.
 type Server struct {
 	router *mux.Router
+	engine loan.DecisionEngine
 }
 
-func New() *Server {
-	s := &Server{router: mux.NewRouter()}
+func New(engine loan.DecisionEngine) *Server {
+	s := &Server{router: mux.NewRouter(), engine: engine}
 	s.routes()
 	return s
 }
@@ -24,10 +26,14 @@ func (s *Server) Router() *mux.Router {
 
 // routes is the single place every route is registered.
 func (s *Server) routes() {
+	// recoverPanic must wrap logging (registered first = outermost) so a
+	// panic recovered here still lets the logging middleware's deferred
+	// access-log line fire.
+	s.router.Use(recoverPanic)
 	s.router.Use(logging)
 
 	s.router.HandleFunc("/healthz", s.handleHealth()).Methods(http.MethodGet)
 
 	api := s.router.PathPrefix("/api/v1").Subrouter()
-	_ = api // register API routes here, e.g. api.HandleFunc("/loans", s.handleListLoans()).Methods(http.MethodGet)
+	api.HandleFunc("/loan-applications", s.handleCreateLoanApplication()).Methods(http.MethodPost)
 }

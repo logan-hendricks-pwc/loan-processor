@@ -28,3 +28,19 @@ func respondJSON(w http.ResponseWriter, status int, v any) {
 func respondError(w http.ResponseWriter, status int, msg string) {
 	respondJSON(w, status, map[string]string{"error": msg})
 }
+
+// FieldError describes one invalid field in a request body.
+type FieldError struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
+// respondFieldErrors writes the 400 body shape used for validation
+// failures: a summary plus every offending field, so a client can fix all
+// of them in one round trip.
+func respondFieldErrors(w http.ResponseWriter, summary string, fields []FieldError) {
+	respondJSON(w, http.StatusBadRequest, map[string]any{
+		"error":  summary,
+		"fields": fields,
+	})
+}

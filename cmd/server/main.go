@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/logan-hendricks-pwc/loan-processor/internal/loan"
 	"github.com/logan-hendricks-pwc/loan-processor/internal/server"
 )
 
@@ -19,9 +20,11 @@ func main() {
 		addr = ":8081"
 	}
 
+	engine := loan.NewRulesEngine()
+
 	srv := &http.Server{
 		Addr:         addr,
-		Handler:      server.New().Router(),
+		Handler:      server.New(engine).Router(),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,
